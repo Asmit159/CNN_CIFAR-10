@@ -1,205 +1,311 @@
-# CIFAR-10 Image Classification — CNN · PyTorch
+# 🧠 CIFAR-10 Image Classification using Deep Convolutional Neural Networks (PyTorch)
 
-<div align="center">
+<p align="center">
 
-![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)
-![torchvision](https://img.shields.io/badge/torchvision-0.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)
-![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-F37626?style=flat-square&logo=jupyter&logoColor=white)
-![CUDA](https://img.shields.io/badge/CUDA-Compatible-76B900?style=flat-square&logo=nvidia&logoColor=white)
-![Accuracy](https://img.shields.io/badge/Test%20Accuracy-74.71%25-brightgreen?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.x-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-red)
+![Dataset](https://img.shields.io/badge/Dataset-CIFAR10-green)
+![Accuracy](https://img.shields.io/badge/Test%20Accuracy-82.59%25-brightgreen)
+![Framework](https://img.shields.io/badge/Framework-PyTorch-orange)
 
-<br/>
+</p>
 
-A clean, well-documented **Convolutional Neural Network** implementation for **CIFAR-10** image classification, built with **PyTorch**.  
-Covers the complete deep learning pipeline — from raw image tensors to evaluated predictions — with a focus on **clarity, correctness, and reproducibility**.
+A **deep convolutional neural network (CNN)** implemented in **PyTorch** for **multi-class image classification on the CIFAR-10 dataset**.
 
-</div>
+The project demonstrates a **complete deep learning pipeline** including:
 
----
+* advanced **data preprocessing**
+* **data augmentation**
+* deep CNN architecture design
+* model training and optimization
+* **performance evaluation and interpretability**
 
-## Results
-
-| Metric | Value |
-|---|---|
-| Test Accuracy | **74.71%** |
-| Final Training Loss | **0.1135** |
-| Epochs | 10 |
-| Batch Size | 64 |
-| Optimizer | Adam |
-| Loss Function | CrossEntropyLoss |
-
-**Training loss progression:**
-
-```
-Epoch  1/10  →  loss: 0.7556  ██████████████████████████████
-Epoch  2/10  →  loss: 0.6322  ████████████████████████
-Epoch  3/10  →  loss: 0.5293  ████████████████████
-Epoch  4/10  →  loss: 0.4282  ████████████████
-Epoch  5/10  →  loss: 0.3469  █████████████
-Epoch  6/10  →  loss: 0.2791  ██████████
-Epoch  7/10  →  loss: 0.2118  ████████
-Epoch  8/10  →  loss: 0.1725  ██████
-Epoch  9/10  →  loss: 0.1350  █████
-Epoch 10/10  →  loss: 0.1135  ████
-```
+The implementation focuses on **robust feature extraction**, **stable training dynamics**, and **generalization performance**.
 
 ---
 
-## Architecture
+# Dataset
+
+The **CIFAR-10 dataset** is a standard benchmark in computer vision consisting of:
 
 ```
-Input (3 × 32 × 32)
-        │
-        ▼
-┌─────────────────┐
-│  Conv2D  32ch   │  3×3, padding=1  →  32 × 32 × 32
-│  ReLU           │
-│  MaxPool 2×2    │                  →  32 × 16 × 16
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Conv2D  64ch   │  3×3, padding=1  →  64 × 16 × 16
-│  ReLU           │
-│  MaxPool 2×2    │                  →  64 × 8 × 8
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Conv2D  128ch  │  3×3, padding=1  →  128 × 8 × 8
-│  ReLU           │
-│  MaxPool 2×2    │                  →  128 × 4 × 4
-└────────┬────────┘
-         │
-         ▼
-     Flatten      →  2048
-         │
-         ▼
-┌─────────────────┐
-│  Linear 2048→256│
-│  ReLU           │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Linear  256→10 │  (logits, no softmax — handled by CrossEntropyLoss)
-└────────┬────────┘
-         │
-         ▼
-   Output (10 classes)
+60,000 RGB images
+Resolution: 32 × 32
+10 object categories
 ```
 
-**Total learnable parameters:** ~562K
+### Class Categories
+
+```
+airplane
+automobile
+bird
+cat
+deer
+dog
+frog
+horse
+ship
+truck
+```
+
+Dataset partitioning:
+
+| Split    | Samples |
+| -------- | ------- |
+| Training | 50,000  |
+| Testing  | 10,000  |
+
+Despite its small image resolution, CIFAR-10 remains challenging due to **high intra-class variability** and **low spatial resolution**.
 
 ---
 
-## Why This Implementation
+#  System Architecture
 
-Most introductory CIFAR-10 notebooks use two convolutional layers and SGD. This implementation makes deliberate choices that improve both performance and learning value:
+The system implements a **deep hierarchical feature extraction pipeline** composed of stacked convolutional blocks followed by fully connected classification layers.
 
-**Three convolutional stages instead of two.**  
-The added third stage (128 channels) allows the network to learn more abstract, discriminative features before the classifier head. This directly contributes to the ~74% test accuracy without any regularization techniques.
+```mermaid
+flowchart TD
 
-**Adam optimizer.**  
-Adaptive learning rate gives smooth, robust convergence out of the box — visible in the monotonically decreasing loss curve — without requiring manual LR scheduling or warmup.
+A[Input Image 3x32x32]
 
-**`CrossEntropyLoss` used correctly.**  
-No softmax in the final layer. `nn.CrossEntropyLoss` fuses log-softmax and negative log-likelihood internally, which is both numerically more stable and the idiomatic PyTorch pattern.
+A --> B[Data Augmentation]
+B --> C[Conv Block 1]
+C --> D[Conv Block 2]
+D --> E[Conv Block 3]
+E --> F[Conv Block 4]
 
-**Tensor shapes documented inline.**  
-Every layer transition is annotated with input → output dimensions, making the notebook a readable reference for understanding how spatial dimensions change through convolution and pooling.
+F --> G[Flatten Feature Maps]
 
-**Extendable structure.**  
-Adding `BatchNorm2d`, `Dropout`, or residual connections requires no architectural refactoring. The model serves as a clean baseline from which deeper networks (VGG-style, ResNet-style) can be incrementally derived.
+G --> H[Fully Connected Layer]
 
----
+H --> I[Dropout Regularization]
 
-## Dataset
-
-**CIFAR-10** — 60,000 RGB images (32×32) across 10 classes.
-
-| Split | Images |
-|---|---|
-| Training | 50,000 |
-| Test | 10,000 |
-
-Classes: `airplane` · `automobile` · `bird` · `cat` · `deer` · `dog` · `frog` · `horse` · `ship` · `truck`
-
----
-
-## Project Structure
-
-```
-cnn-cifar10-pytorch/
-├── CNN_for_CIFAR10.ipynb   # Main notebook — data loading, training, evaluation
-├── data/                   # CIFAR-10 downloaded here on first run
-└── README.md
+I --> J[Output Layer Softmax 10 Classes]
 ```
 
 ---
 
-## Quickstart
+#  CNN Architecture Details
 
-**1. Clone**
-```bash
-git clone https://github.com/yourusername/cnn-cifar10-pytorch.git
+Each convolution block follows a **standardized deep learning design pattern**:
+
+```
+Conv2D → Batch Normalization → ReLU Activation → MaxPooling
+```
+
+This structure improves **gradient propagation**, **training stability**, and **feature abstraction**.
+
+### Architecture Specification
+
+| Layer          | Output Channels | Operation                         |
+| -------------- | --------------- | --------------------------------- |
+| Conv Block 1   | 32              | Conv + BatchNorm + ReLU + MaxPool |
+| Conv Block 2   | 64              | Conv + BatchNorm + ReLU + MaxPool |
+| Conv Block 3   | 128             | Conv + BatchNorm + ReLU + MaxPool |
+| Conv Block 4   | 256             | Conv + BatchNorm + ReLU + MaxPool |
+| Dense Layer    | 512             | Fully Connected                   |
+| Regularization | —               | Dropout                           |
+| Output         | 10              | Softmax Classification            |
+
+This hierarchical architecture progressively learns:
+
+```
+Edges → Textures → Shapes → Object Representations
+```
+
+---
+
+# ⚙️ Data Preprocessing Pipeline
+
+To improve **generalization capability**, several **stochastic data augmentation techniques** are applied during training:
+
+```
+Random Cropping
+Random Horizontal Flipping
+Random Rotation
+Color Jittering
+Normalization
+```
+
+Normalization uses the official CIFAR-10 statistics:
+
+```
+Mean: (0.4914, 0.4822, 0.4465)
+Std:  (0.2023, 0.1994, 0.2010)
+```
+
+These augmentations increase **effective dataset diversity**, preventing **overfitting** and improving **model robustness**.
+
+---
+
+# 🚀 Training Configuration
+
+Training was performed using **mini-batch stochastic gradient descent optimization**.
+
+| Parameter      | Value                   |
+| -------------- | ----------------------- |
+| Optimizer      | Adam                    |
+| Loss Function  | CrossEntropyLoss        |
+| Epochs         | 50                      |
+| Batch Size     | 64                      |
+| Scheduler      | Learning Rate Scheduler |
+| Regularization | Dropout + BatchNorm     |
+
+---
+
+# 📈 Model Performance
+
+Final evaluation on the **10,000 image test set**:
+
+```
+Test Accuracy: 82.59 %
+```
+
+Evaluation metrics include:
+
+* classification accuracy
+* confusion matrix
+* per-class accuracy analysis
+* qualitative prediction inspection
+
+---
+
+# 🔍 Confusion Matrix
+
+The confusion matrix highlights class-level performance and misclassification patterns.
+
+![Confusion Matrix](results/confusion.png)
+
+Common confusions occur between visually similar categories such as:
+
+```
+cat ↔ dog
+ship ↔ airplane
+truck ↔ automobile
+```
+
+These errors arise primarily from **low spatial resolution and visual similarity**.
+
+---
+
+# 🖼 Model Predictions
+
+Example predictions generated by the trained CNN.
+
+![Predictions](results/predictions.png)
+
+Each sample displays:
+
+```
+Predicted Class
+Ground Truth Label
+```
+
+---
+
+# ⚠️ Misclassified Samples
+
+Misclassification analysis reveals the limitations of the network.
+
+![Misclassified](./results/misclassified.png)
+
+Such qualitative evaluation helps understand **decision boundaries and feature ambiguities**.
+
+---
+
+## Architecture Visualization
+![Visualization](./results/visualize.png)
+
+
+# ⭐ Key Strengths of the Model
+
+The proposed CNN architecture incorporates several design decisions that improve learning efficiency:
+
+### Hierarchical Feature Extraction
+
+Stacked convolutional blocks allow the network to learn **multi-scale spatial representations**.
+
+### Batch Normalization
+
+Stabilizes training by mitigating **internal covariate shift**, enabling faster convergence.
+
+### Data Augmentation
+
+Artificially increases training diversity, improving **generalization performance**.
+
+### Regularization via Dropout
+
+Reduces overfitting in dense layers.
+
+### Efficient Architecture
+
+The network maintains a **balanced depth-to-parameter ratio**, enabling strong performance without excessive computational cost.
+
+---
+
+#  Repository Structure
+
+```
+cnn-cifar10-pytorch
+│
+├── CNN_CIFAR10.ipynb
+├── README.md
+├── requirements.txt
+│
+└── results
+    ├── confusion_matrix.png
+    ├── predictions.png
+    └── misclassified.png
+```
+
+---
+
+# Running the Project
+
+Clone the repository:
+
+```
+git clone https://github.com/Asmit159/cnn-cifar10-pytorch.git
 cd cnn-cifar10-pytorch
 ```
 
-**2. Install dependencies**
-```bash
-pip install torch torchvision notebook
+Install dependencies:
+
+```
+pip install torch torchvision matplotlib seaborn
 ```
 
-**3. Run**
-```bash
-jupyter notebook CNN_for_CIFAR10.ipynb
+Run the notebook:
+
+```
+jupyter notebook
 ```
 
-CIFAR-10 data downloads automatically on first run (`download=True`). No manual setup required.
+Open:
 
----
-
-## Training Pipeline
-
-```python
-for epoch in range(epochs):
-    for images, labels in trainloader:
-        optimizer.zero_grad()          # clear accumulated gradients
-        output = model(images)         # forward pass
-        loss = criterion(output, labels)  # cross-entropy loss
-        loss.backward()                # backpropagation
-        optimizer.step()               # update weights (Adam)
+```
+CNN_CIFAR10.ipynb
 ```
 
-Evaluation is performed with `model.eval()` and `torch.no_grad()` to disable gradient tracking and ensure deterministic inference.
+---
+
+# Learning Outcomes
+
+This project demonstrates practical understanding of:
+
+* convolutional neural networks
+* feature extraction in computer vision
+* deep learning model training
+* performance evaluation and interpretability
+* PyTorch-based deep learning pipelines
 
 ---
 
-## Tech Stack
+# 👨‍💻 Author
+Asmit Mandal
+Deep Learning Minor Project
+CNN-based Image Classification using **PyTorch**
 
-| Tool | Version | Role |
-|---|---|---|
-| Python | 3.13 | Runtime |
-| PyTorch | 2.x | Deep learning framework |
-| torchvision | 0.x | Dataset loading & transforms |
-| NumPy | — | Numerical operations |
-| Jupyter Notebook | — | Interactive development |
+If you found this project useful ⭐ consider **starring the repository**.
 
----
-
-## Possible Extensions
-
-- Add `BatchNorm2d` after each conv layer for faster convergence
-- Add `Dropout` before the final linear layer to reduce overfitting
-- Extend to 15–20 epochs and add a learning rate scheduler
-- Implement per-class accuracy breakdown
-- Add data augmentation (`RandomHorizontalFlip`, `RandomCrop`)
-
----
-
-## Author
-
-Minor Project — Deep Learning  
-CNN-based Image Classification using PyTorch on CIFAR-10
